@@ -317,3 +317,18 @@ button { font: inherit; color: inherit; }
 .lockbox { display: grid; place-items: center; font: 800 22px var(--body); color: var(--muted); background: var(--surface2); border-radius: 8px; margin-bottom: 4px; }
 .dex-item { min-height: 0; }
 @media (max-width: 380px) { .stat-grid { grid-template-columns: repeat(2, 1fr); } .end-title { font-size: 32px; } }
+
+.era-motto { margin: 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 10px; font-size: 13px; color: var(--muted); }
+.era-motto b { color: var(--seal); font-family: var(--disp, inherit); font-size: 15px; }
+.years { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.yr { background: var(--surface); border: 1px solid var(--line); border-left: 4px solid var(--line); border-radius: 0 10px 10px 0; padding: 10px 14px; display: grid; gap: 2px; font-size: 14px; }
+.yr b { font-size: 12.5px; color: var(--muted); }
+.yr.best, .yr.open { border-left-color: var(--good); } .yr.hard { border-left-color: var(--bad); } .yr.gamble { border-left-color: var(--tool); } .yr.rest { border-left-color: var(--water); }
+.hook { margin: 0; padding: 12px 14px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; line-height: 1.7; }
+.el-rows { display: grid; gap: 8px; }
+.el-row { display: grid; grid-template-columns: 3.6em 1fr 5.5em; grid-template-rows: auto auto; column-gap: 8px; row-gap: 2px; align-items: center; }
+.el-name { grid-row: 1 / span 2; font-weight: 700; font-size: 14px; }
+.el-bar { height: 7px; border-radius: 4px; background: var(--surface2); overflow: hidden; grid-column: 2; }
+.el-bar i { display: block; height: 100%; border-radius: 4px; }
+.el-bar i.innate { opacity: .45; }
+.el-num { grid-column: 3; grid-row: 1 / span 2; text-align: right; }

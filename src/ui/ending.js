@@ -1,7 +1,7 @@
 // 엔딩 화면: 도트 그림 → 제목 → 숫자 요약 → 삶의 흐름 → 시기별 풀이 → 총평 → 다시 하기 → 상세(분야별, 환경, 도감).
 import { judge, FIELDS, ENDINGS, ENDING_ORDER, C, modeOf, rollEnv, ENV_RESOURCE, ENV_REGION, readLife } from "../core/index.js";
 import { $, h, v, show } from "./dom.js";
-import { FIELD_VAR } from "./constants.js";
+import { FIELD_VAR, EL_VAR } from "./constants.js";
 import { S, nav, saveDex, paintDexCount } from "./state.js";
 import { endingCanvas } from "./ending-art.js";
 
@@ -66,7 +66,21 @@ export function renderEnding() {
       h("div", { class: "eras" }, rd.eras.map((e) => h("div", { class: "era" + (e.strongest ? " best" : "") },
         h("div", { class: "era-top" }, h("b", {}, e.name), h("span", { class: "small muted" }, e.range), h("span", { class: "era-tag " + e.tone }, e.tag),
           e.strongest ? h("span", { class: "era-best" }, "가장 빛난 시기") : null),
-        h("p", {}, e.text.replace(/^[^:]+: /, "")))))),
+        h("p", { class: "era-motto", title: e.motto.gloss }, h("b", {}, `${e.motto.kr}(${e.motto.hanja})`), h("span", {}, e.motto.gloss)),
+        h("p", {}, e.text))))),
+    h("section", { class: "end-sec" }, h("h3", { class: "sec-title" }, "인생의 세운"),
+      h("p", { class: "small muted" }, "삶의 결을 바꾼 해를 뽑았어요."),
+      h("ol", { class: "years" }, rd.years.map((y) => h("li", { class: "yr " + y.kind }, h("b", {}, y.label), h("span", {}, y.text))))),
+    rd.hook ? h("section", { class: "end-sec" }, h("h3", { class: "sec-title" }, rd.hook.title), h("p", { class: "hook" }, rd.hook.text)) : null,
+    h("section", { class: "end-sec" }, h("h3", { class: "sec-title" }, "기운의 쓰임"),
+      h("div", { class: "el-rows" }, rd.balance.rows.map((row) => h("div", { class: "el-row" },
+        h("span", { class: "el-name" }, `${row.el}(${row.hanja})`),
+        row.innate != null ? h("div", { class: "el-bar", "aria-label": `타고난 ${row.innate}%` }, h("i", { class: "innate", style: `width:${row.innate}%;background:${v(EL_VAR[row.el])}` })) : null,
+        h("div", { class: "el-bar", "aria-label": `쓴 ${row.used}%` }, h("i", { style: `width:${row.used}%;background:${v(EL_VAR[row.el])}` })),
+        h("span", { class: "el-num small muted" }, row.innate != null ? `${row.innate}% → ${row.used}%` : `${row.used}%`)))),
+      h("p", { class: "small muted" }, "위 막대는 타고난 오행, 아래 막대는 이번 생에 쓴 기운이에요."),
+      ...rd.balance.lines.map((l) => h("p", {}, l)),
+      h("p", { class: "small muted" }, `${rd.balance.lack.el}(${rd.balance.lack.hanja}) — ${rd.balance.lack.hint}.`)),
     h("section", { class: "end-sec" }, h("h3", { class: "sec-title" }, "총평"),
       h("ul", { class: "overall" }, rd.overall.map((s) => h("li", {}, s))),
       h("blockquote", { class: "advice" }, h("b", {}, "풀이 한마디"), h("p", {}, rd.advice))),
