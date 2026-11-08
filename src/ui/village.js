@@ -100,7 +100,7 @@ export async function createVillage(parent, cb) {
       this.npcs = [["npcA", 0xd1604f, 0x6b3a2a], ["npcB", 0x4fb184, 0xd9b44a], ["npcC", 0xab8be6, 0x1d2330]].map(([k, sh, hr], i) => this.makeWalker(k, sh, hr, i));
       this.weather = this.add.container(0, 0).setDepth(5000);
       this.tintLayer = this.add.rectangle(0, 0, COLS * TILE, ROWS * TILE, 0xffffff, 0).setOrigin(0).setDepth(4000);
-      this.input.on("pointerdown", (p) => this.onTap(p));
+      this.input.on("pointerdown", (p) => { this.downAt = this.time.now; this.onTap(p); });
       const k = this.input.keyboard; k.disableGlobalCapture();
       this.keys = k.addKeys({ up: "UP", down: "DOWN", left: "LEFT", right: "RIGHT", w: "W", a: "A", s: "S", d: "D" });
       this.applyStates(); this.applySeason();
@@ -108,6 +108,7 @@ export async function createVillage(parent, cb) {
       api = {
         setStates: (s) => { states = s; if (this.sys.isActive()) this.applyStates(); },
         setEncounter: (cell) => this.setEncounter(cell),
+        hold: (d) => { this.holdDir = d; },
         setSeason: (i) => { seasonIdx = i; if (this.sys.isActive()) this.applySeason(); },
         reset: () => this.resetPlayer(), step: (d) => this.pushStep(d),
         destroy: () => this.game.destroy(true), pos: () => ({ ...this.cell }), busy: () => this.moving,
@@ -305,6 +306,7 @@ export async function createVillage(parent, cb) {
     }
 
     resetPlayer() {
+      this.holdDir = null;
       this.tweens.killTweensOf(this.hero); this.queue = []; this.moving = false; this.pending = null; this.cell = { ...SPAWN };
       this.hero.setPosition(this.cell.x * TILE, this.cell.y * TILE).setTexture("hero_down");
     }
@@ -353,6 +355,17 @@ export async function createVillage(parent, cb) {
     update() {
       this.hero.setDepth(this.hero.y + 32);
       this.npcs.forEach((n) => n.img.setDepth(n.img.y + 32));
+      const ptr = this.input.activePointer;
+      // 화면을 꾹 누르고 있으면 누른 쪽으로 계속 걷는다(길게 누르면 탭 이동 경로는 취소)
+      if (ptr.isDown && this.downAt != null && this.time.now - this.downAt > 220 && !document.body.classList.contains("lock")) {
+        const dx = ptr.worldX - (this.hero.x + 16), dy = ptr.worldY - (this.hero.y + 16);
+        if (Math.abs(dx) > 10 || Math.abs(dy) > 10) {
+          this.queue = []; this.pending = null;
+          if (!this.moving) this.pushStep(Math.abs(dx) >= Math.abs(dy) ? (dx > 0 ? "right" : "left") : (dy > 0 ? "down" : "up"));
+        }
+        return;
+      }
+      if (this.holdDir && !this.moving && !this.queue.length && !document.body.classList.contains("lock")) { this.pushStep(this.holdDir); return; }
       if (this.moving || this.queue.length) return;
       if (document.body.classList.contains("lock") || this.game.canvas.offsetParent === null) return;
       const k = this.keys;

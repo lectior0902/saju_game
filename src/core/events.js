@@ -104,6 +104,7 @@ export function resolveEncounter(ch, ev, idx, rng) {
     log.unshift({ t: "info", s: c.s });
   }
   ch.encounters = (ch.encounters || 0) + 1;
+  (ch.encLog ||= []).push({ turn: ch.turn, id: ev.id, field: ev.field, choice: idx, gamble: !!c.gamble, pass: !c.gamble && !c.mind && !c.xp && !c.pioneer });
   return { log, mind: ch.mind - m0, xp: FIELDS.reduce((a, f) => a + ch.xp[f], 0) - x0 };
 }
 

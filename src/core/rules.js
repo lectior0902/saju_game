@@ -35,7 +35,8 @@ export function newChar(r, env = { resource: "mid", region: "town" }) {
     pioneer: Object.fromEntries(FIELDS.map((f) => [f, 0])),
     grit: Object.fromEntries(FIELDS.map((f) => [f, 0])),
     questLog: Object.fromEntries(FIELDS.map((f) => [f, []])),
-    seenEvents: new Set(), encounters: 0,
+    seenEvents: new Set(), encounters: 0, encLog: [],
+    history: [], // 한 해마다 한 줄: { turn, age, kind: "act"|"rest", field, mode, tier, gain, mind, peak, burn, opened }
     opened: new Set(), mind: res.startMind, turn: 0, burnTurns: 0, early: 0, late: 0, lastField: null,
     // 환경이 만든 차이(엔딩에서 보여 준다)
     envMind: 0,      // 환경 때문에 더 쓴 마음(음수면 덜 쓴 것)
@@ -126,6 +127,7 @@ export function act(ch, f, age, perf, rng) {
   ch.xp[f] += gain;
   if (ch.turn < Math.ceil(TURNS / 2)) ch.early += gain; else ch.late += gain;
   ch.lastField = f;
+  ch.history.push({ turn: ch.turn, age, kind: "act", field: f, mode: i.mode, tier: perf, gain, mind: ch.mind, peak: i.peak, burn: log.some((l) => l.s.startsWith("지쳐서")), opened: openedNow });
   return { log, gain, openedNow };
 }
 
@@ -141,6 +143,7 @@ export function rest(ch) {
   ch.mind = Math.min(100, ch.mind + C.REST + ch.season.restPlus + res.restDelta);
   ch.envMind += -res.restDelta;
   ch.lastField = null;
+  ch.history.push({ turn: ch.turn, age: C.START + ch.turn * C.STEP, kind: "rest", field: null, mode: null, tier: null, gain: 0, mind: ch.mind, peak: false, burn: false, opened: false });
 }
 
 /** 한 해를 마무리한다. 불리한 환경 하나당 지원 제도를 만날 확률이 있다. */

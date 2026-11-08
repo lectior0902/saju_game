@@ -121,7 +121,7 @@ Referrer-Policy: no-referrer
 ## 10. 배포 직전 순서 요약
 
 1. `npm install`
-2. `npm test` (54개 테스트)
+2. `npm test` (58개 테스트)
 3. `npm run build` 후 `npm run preview`로 로컬에서 확인
 4. 3절 점검표에서 "정확도"와 "개인정보" 항목 확인
 5. 2절 방법 중 하나로 배포

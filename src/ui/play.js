@@ -39,9 +39,19 @@ function buildPlay() {
   P.cardsWrap = h("div", { class: "cards-wrap" }, h("h2", { class: "sec-title" }, "올해는 어디에 힘을 쓸까요?"), P.cards);
   P.stage = h("div", { class: "village-stage" });
   P.vHint = h("p", { class: "v-hint", "aria-live": "polite" }, "마을을 걸어 건물 문 앞에 서면 들어갈 수 있어요.");
-  P.dpad = h("div", { class: "dpad", role: "group", "aria-label": "이동 버튼" },
-    [["up", "▲"], ["left", "◀"], ["down", "▼"], ["right", "▶"]].map(([d, t]) =>
-      h("button", { class: "dp dp-" + d, type: "button", "aria-label": { up: "위", down: "아래", left: "왼쪽", right: "오른쪽" }[d], onclick: () => S.village && S.village.step(d) }, t)));
+  // 십자 버튼: 누르고 있는 동안 계속 걷는다
+  const holdBtn = (d, t) => {
+    const go = () => S.village && S.village.step(d);
+    const stop = () => { S.village && S.village.hold && S.village.hold(null); };
+    const b = h("button", { class: "dp dp-" + d, type: "button", "aria-label": { up: "위", down: "아래", left: "왼쪽", right: "오른쪽" }[d] }, t);
+    b.addEventListener("pointerdown", (e) => { e.preventDefault(); if (S.village) S.village.hold(d); });
+    ["pointerup", "pointercancel", "pointerleave", "blur"].forEach((ev) => b.addEventListener(ev, stop));
+    b.addEventListener("contextmenu", (e) => e.preventDefault());
+    b.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); go(); } });
+    return b;
+  };
+  P.dpad = h("div", { class: "dpad", role: "group", "aria-label": "이동 버튼. 누르고 있으면 계속 걸어요" },
+    [["up", "▲"], ["left", "◀"], ["down", "▼"], ["right", "▶"]].map(([d, t]) => holdBtn(d, t)));
   P.villageWrap = h("div", { class: "village-wrap" }, P.stage, P.vHint, P.dpad);
   P.modeBtns = ["village", "card"].map((m) => h("button", { class: "seg", type: "button", "data-mode": m, onclick: () => { S.mode = m; applyMode(); } }, m === "village" ? "마을" : "카드"));
   P.modeBar = h("div", { class: "modebar", role: "group", "aria-label": "화면 방식" }, P.modeBtns);
@@ -189,7 +199,7 @@ async function applyMode() {
       S.village.setStates(buildingStates(S.opts, modeFn));
       S.village.setSeason(S.ch.turn % 4);
       S.village.setEncounter(S.enc && !S.enc.done ? S.enc.cell : null);
-      P.vHint.textContent = "마을을 걸어 건물 문 앞에 서면 들어갈 수 있어요. 길 위의 ✦ 표식도 밟아 보세요.";
+      P.vHint.textContent = "마을을 걸어 건물 문 앞에 서면 들어갈 수 있어요. 화면이나 방향 버튼을 꾹 누르면 계속 걸어요. 길 위의 ✦ 표식도 밟아 보세요.";
     } catch (e) {
       console.warn("마을 모드를 불러오지 못했어요", e);
       S.villageFailed = true; S.mode = "card";

@@ -1,9 +1,9 @@
-// 엔딩 화면: 판정 결과, 분야별 성취, 환경이 만든 차이, 도감.
-import { judge, FIELDS, ENDINGS, ENDING_ORDER, C, modeOf, rollEnv, ENV_RESOURCE, ENV_REGION } from "../core/index.js";
+// 엔딩 화면: 도트 그림 → 제목 → 숫자 요약 → 삶의 흐름 → 시기별 풀이 → 총평 → 다시 하기 → 상세(분야별, 환경, 도감).
+import { judge, FIELDS, ENDINGS, ENDING_ORDER, C, modeOf, rollEnv, ENV_RESOURCE, ENV_REGION, readLife } from "../core/index.js";
 import { $, h, v, show } from "./dom.js";
 import { FIELD_VAR } from "./constants.js";
 import { S, nav, saveDex, paintDexCount } from "./state.js";
-import { chipField } from "./reveal.js";
+import { endingCanvas } from "./ending-art.js";
 
 const signed = (n) => (n > 0 ? `+${n}` : n < 0 ? `${n}` : "0");
 
@@ -21,46 +21,77 @@ function envSummary(ch) {
   ];
 }
 
+/** 삶의 흐름: 한 해가 한 칸. 높이는 그해의 성취, 색은 분야, 쉰 해는 달 모양. */
+function flowStrip(rd) {
+  const MAXG = 26;
+  const cols = rd.timeline.map((e) => {
+    const tip = e.kind === "rest" ? `${e.age}세 · 쉬어 간 해`
+      : `${e.age}세 · ${e.field}(${rd.mode[e.mode]}) +${e.gain.toFixed(0)}${e.opened ? " · 길이 열림" : ""}${e.burn ? " · 지쳐서 성과 절반" : ""}`;
+    const bar = e.kind === "rest"
+      ? h("i", { class: "fl-rest", "aria-hidden": "true" }, "☾")
+      : h("i", { class: "fl-bar" + (e.mode === "off" || e.mode === "aux" ? " hard" : ""), style: `height:${Math.max(8, Math.min(100, (e.gain / MAXG) * 100))}%;background:${v(FIELD_VAR[e.field])}` });
+    return h("div", { class: "fl-col", title: tip, "aria-label": tip, role: "img" },
+      h("span", { class: "fl-mark" }, e.opened ? "★" : e.burn ? "!" : ""), h("div", { class: "fl-track" }, bar), h("span", { class: "fl-age" }, e.age));
+  });
+  const used = [...new Set(rd.timeline.filter((e) => e.kind === "act").map((e) => e.field))];
+  return h("div", { class: "flow" },
+    h("div", { class: "fl-cols" }, cols),
+    h("div", { class: "fl-legend" },
+      used.map((f) => h("span", {}, h("i", { class: "dot", style: `background:${v(FIELD_VAR[f])}` }), f)),
+      h("span", {}, "☾ 쉼"), h("span", {}, "★ 길이 열림"), h("span", {}, "! 지쳐서 성과 절반")),
+    h("p", { class: "small muted" }, "줄무늬가 있는 막대는 루트 밖(낯선 길·보조)에서 힘을 쓴 해예요. 숫자는 나이예요."));
+}
+
 export function renderEnding() {
   const { ch, r, env } = S, res = judge(ch), el = $("scr-end");
   el.textContent = "";
   const isNew = !S.dex.has(res.key);
   S.dex.add(res.key);
   saveDex();
-  const opened = [...ch.opened];
+  const rd = readLife(ch, res, r);
   const rs = ENV_RESOURCE[env.resource], rg = ENV_REGION[env.region];
 
   el.append(
-    h("div", { style: "display:grid;gap:12px" },
-      h("span", { class: "stamp" }, isNew ? "새 엔딩" : "다시 만난 엔딩"),
-      h("p", { class: "eyebrow" }, `${C.END}세까지의 기록 · ${r.variant}`),
+    h("div", { class: "end-hero" },
+      endingCanvas(res.key),
+      h("span", { class: "stamp end-stamp" }, isNew ? "새 엔딩" : "다시 만난 엔딩")),
+    h("div", { style: "display:grid;gap:8px" },
+      h("p", { class: "eyebrow" }, `${C.START}~${C.END}세의 인생 풀이 · ${r.variant}`),
       h("h2", { class: "end-title" }, res.title),
+      h("p", { class: "end-headline" }, rd.headline),
       h("p", {}, res.text)),
-    h("dl", { class: "facts", style: "margin:0" },
-      h("div", { class: "fact" }, h("dt", {}, "가장 깊은 길"), h("dd", {}, chipField(res.top, `${ch.xp[res.top].toFixed(0)}점`))),
-      h("div", { class: "fact" }, h("dt", {}, "새로 연 길"), h("dd", {}, opened.length ? h("div", { class: "chips" }, opened.map((f) => chipField(f))) : h("span", { class: "muted" }, "없어요"))),
-      h("div", { class: "fact" }, h("dt", {}, "총 성취"), h("dd", {}, `${res.total.toFixed(0)}점`))),
-    h("div", { class: "xp-list" }, FIELDS.slice().sort((a, b) => ch.xp[b] - ch.xp[a]).map((f) => {
-      const m = modeOf(ch, f);
-      return h("div", { class: "xp-row", style: "grid-template-columns:3em 1fr 6em" }, h("span", {}, f),
-        h("div", { class: "xp-bar" }, h("i", { style: `width:${Math.min(100, ch.xp[f] / 1.6)}%;background:${v(FIELD_VAR[f])}` })),
-        h("span", { class: "xp-num" }, `${ch.xp[f].toFixed(0)} ${m === "route" ? "루트" : m === "open" ? "개척" : m === "aux" ? "보조" : ""}`));
-    })),
-    h("div", { style: "display:grid;gap:6px" },
-      h("p", { class: "sub-head" }, `환경이 만든 차이 · ${rs.name}, ${rg.name}`),
-      h("dl", { class: "facts", style: "margin:0" }, envSummary(ch))),
-    h("div", { style: "display:grid;gap:10px" },
-      h("h3", { class: "sec-title" }, `엔딩 도감 ${S.dex.size} / ${ENDING_ORDER.length}`),
-      h("div", { class: "dex" }, ENDING_ORDER.map((k) => {
-        const got = S.dex.has(k);
-        return h("div", { class: "dex-item " + (got ? "got" : "lock") + (k === res.key ? " now" : "") },
-          h("b", {}, got ? ENDINGS[k].title : "???"), h("span", {}, ENDINGS[k].hint));
-      }))),
+    h("div", { class: "stat-grid" }, rd.stats.map((s) => h("div", { class: "stat" }, h("span", { class: "stat-v" }, s.value), h("span", { class: "stat-l" }, s.label)))),
+    h("section", { class: "end-sec" }, h("h3", { class: "sec-title" }, "삶의 흐름"), flowStrip(rd)),
+    h("section", { class: "end-sec" }, h("h3", { class: "sec-title" }, "시기별 풀이"),
+      h("div", { class: "eras" }, rd.eras.map((e) => h("div", { class: "era" + (e.strongest ? " best" : "") },
+        h("div", { class: "era-top" }, h("b", {}, e.name), h("span", { class: "small muted" }, e.range), h("span", { class: "era-tag " + e.tone }, e.tag),
+          e.strongest ? h("span", { class: "era-best" }, "가장 빛난 시기") : null),
+        h("p", {}, e.text.replace(/^[^:]+: /, "")))))),
+    h("section", { class: "end-sec" }, h("h3", { class: "sec-title" }, "총평"),
+      h("ul", { class: "overall" }, rd.overall.map((s) => h("li", {}, s))),
+      h("blockquote", { class: "advice" }, h("b", {}, "풀이 한마디"), h("p", {}, rd.advice))),
     h("div", { class: "btn-row" },
       h("button", { class: "btn", type: "button", onclick: () => nav.startRun() }, "같은 사주·환경으로 다시"),
       h("button", { class: "btn ghost", type: "button", onclick: rerollEnv }, "환경만 바꿔서 다시"),
       h("button", { class: "btn ghost", type: "button", onclick: () => { paintDexCount(); show("scr-start"); } }, "다른 사주 넣기")),
-    h("p", { class: "note" }, "사주는 출발선의 경향일 뿐이에요. 같은 선택도 환경에 따라 드는 비용이 달라요. 이 결말은 어느 길을 골랐는지, 어떤 환경에서 걸었는지, 미니게임 솜씨가 함께 만들었어요."));
+    h("section", { class: "end-sec" }, h("h3", { class: "sec-title" }, "분야별 성취"),
+      h("div", { class: "xp-list" }, FIELDS.slice().sort((a, b) => ch.xp[b] - ch.xp[a]).map((f) => {
+        const m = modeOf(ch, f);
+        return h("div", { class: "xp-row", style: "grid-template-columns:3em 1fr 6em" }, h("span", {}, f),
+          h("div", { class: "xp-bar" }, h("i", { style: `width:${Math.min(100, ch.xp[f] / 1.6)}%;background:${v(FIELD_VAR[f])}` })),
+          h("span", { class: "xp-num" }, `${ch.xp[f].toFixed(0)} ${m === "route" ? "루트" : m === "open" ? "개척" : m === "aux" ? "보조" : ""}`));
+      }))),
+    h("section", { class: "end-sec" }, h("p", { class: "sub-head" }, `환경이 만든 차이 · ${rs.name}, ${rg.name}`),
+      h("dl", { class: "facts", style: "margin:0" }, envSummary(ch))),
+    h("section", { class: "end-sec" },
+      h("h3", { class: "sec-title" }, `엔딩 도감 ${S.dex.size} / ${ENDING_ORDER.length}`),
+      h("div", { class: "dex" }, ENDING_ORDER.map((k) => {
+        const got = S.dex.has(k);
+        return h("div", { class: "dex-item " + (got ? "got" : "lock") + (k === res.key ? " now" : "") },
+          got ? endingCanvas(k) : h("div", { class: "end-art lockbox" }, "?"),
+          h("b", {}, got ? ENDINGS[k].title : "???"), h("span", {}, ENDINGS[k].hint));
+      }))),
+    h("p", { class: "note" }, "사주는 출발선의 경향일 뿐이에요. 이 풀이는 이번 판의 기록(어느 길을 골랐는지, 어떤 환경에서 걸었는지, 미니게임 솜씨)으로 만든 게임 속 해석이고, 실제 운세가 아니에요."));
 }
 
 function rerollEnv() {
