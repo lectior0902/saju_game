@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>사주 루트</title>
+  <meta name="description" content="태어난 때가 만든 경사를 따라 걸을지, 거슬러 오를지 고르는 사주 인생 시뮬레이션. 미니게임 3종과 엔딩 9개. 오락용이에요.">
+  <meta name="color-scheme" content="dark light">
+  <meta name="theme-color" content="#0e1117">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="사주 루트">
+  <meta property="og:description" content="유리한 길을 따라 걸을지, 거슬러 오를지. 사주와 출발 환경으로 시작하는 인생 시뮬레이션.">
+  <meta property="og:locale" content="ko_KR">
+  <link rel="icon" href="./favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="./icons/icon-192.png">
+  <link rel="manifest" href="./manifest.webmanifest">
+</head>
+<body>
+<main class="wrap">
+  <section id="scr-start" class="screen">
+    <div style="display:grid;gap:10px">
+      <p class="eyebrow">만세력 × 인생 시뮬레이션</p>
+      <h1 class="title">사주 루트</h1>
+      <p class="lede">태어난 때가 만든 경사가 캐릭터의 인생에 깔려 있어요. 그 길로 내려가면 수월하고, 거슬러 오르면 더 힘들어요. 어느 쪽을 걸을지는 당신이 정해요.</p>
+    </div>
+    <form id="birth-form" class="form" novalidate>
+      <div class="field"><label for="inY">태어난 해</label><input id="inY" type="number" inputmode="numeric" min="1900" max="2030" value="1999"></div>
+      <div class="field"><label for="inM">월</label><select id="inM"></select></div>
+      <div class="field"><label for="inD">일</label><select id="inD"></select></div>
+      <div class="field wide"><label for="inH">태어난 시간</label><select id="inH"></select></div>
+      <p class="env-note form-legend">출발 환경은 사주와 별개로, 내가 고르지 않은 조건이에요. 비워 두면 무작위로 정해져요.</p>
+      <div class="field half"><label for="inR">가정 형편</label><select id="inR"></select></div>
+      <div class="field half"><label for="inG">사는 곳</label><select id="inG"></select></div>
+      <p id="form-err" class="err form-legend" role="alert"></p>
+      <button class="btn" type="submit" style="grid-column:1/-1">사주 보기</button>
+    </form>
+    <p class="small muted">양력 기준이고, 절기 경계는 매년 같은 날짜로 근사했어요. 절기 당일 전후 하루는 실제 만세력과 다를 수 있어요. 게임용 풀이라서 실제 운세로 읽지 마세요. 입력한 생년월일시는 이 기기 안에서만 계산하고 어디로도 보내지 않아요.</p>
+    <div class="dex-strip"><span id="dex-count" class="small muted"></span></div>
+  </section>
+  <section id="scr-reveal" class="screen" hidden></section>
+  <section id="scr-play" class="screen" hidden></section>
+  <section id="scr-end" class="screen" hidden></section>
+</main>
+<div id="overlay" class="overlay" hidden></div>
+<script type="module" src="/src/entry-web.js"></script>
+</body>
+</html>

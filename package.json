@@ -1,0 +1,25 @@
+{
+  "name": "saju-route",
+  "version": "0.3.0",
+  "private": true,
+  "description": "사주에 따라 유리한 루트가 깔린 인생 시뮬레이션 게임",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "build:single": "node scripts/build-single.mjs",
+    "sim": "node scripts/sim.mjs",
+    "test": "npm run build:single && node --test \"tests/*.test.mjs\""
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.0",
+    "jsdom": "^26.0.0",
+    "vite": "^6.0.0"
+  },
+  "dependencies": {
+    "@fontsource/gothic-a1": "^5.0.0",
+    "@fontsource/nanum-myeongjo": "^5.0.0",
+    "phaser": "^3.90.0"
+  }
+}
